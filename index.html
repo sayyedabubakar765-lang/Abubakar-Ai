@@ -3,462 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abubakar Ai - Secure Workspace</title>
+    <title>Abubakar Ai</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        body { background: #ffffff; color: #111111; height: 100vh; display: flex; overflow: hidden; }
-        
-        /* Password Lock Screen Overlay */
-        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .auth-box { background: #f8f9fa; border: 1px solid #e9ecef; padding: 30px; border-radius: 8px; width: 320px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .auth-box h2 { font-size: 1.1rem; color: #111; text-align: center; }
-        .auth-box input { padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 0.95rem; }
-        .auth-box button { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .auth-box button:hover { background: #1d4ed8; }
-        .error-msg { color: #dc2626; font-size: 0.8rem; text-align: center; display: none; }
-
-        /* Sidebar Navigation */
-        aside { width: 260px; background: #f8f9fa; border-right: 1px solid #e9ecef; display: flex; flex-direction: column; padding: 16px; flex-shrink: 0; }
-        .brand { font-size: 1.1rem; font-weight: 700; color: #111; margin-bottom: 16px; }
-        .brand span { color: #2563eb; }
-        
-        .user-card { background: #ffffff; border: 1px solid #e9ecef; padding: 10px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 16px; }
-        .user-name { font-weight: 600; color: #111; }
-        .user-status { color: #16a34a; font-size: 0.75rem; }
-
-        .btn-new-chat { background: #2563eb; color: #ffffff; border: none; padding: 10px; border-radius: 6px; font-size: 0.875rem; font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 16px; text-align: left; }
-        .btn-new-chat:hover { background: #1d4ed8; }
-
-        .menu-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 15px; }
-        .menu-item { padding: 9px 12px; border-radius: 6px; font-size: 0.875rem; color: #4b5563; cursor: pointer; font-weight: 500; }
-        .menu-item:hover, .menu-item.active { background: #edf2f7; color: #111; }
-
-        /* History Section */
-        .history-section { flex: 1; overflow-y: auto; border-top: 1px solid #e9ecef; padding-top: 12px; }
-        .history-title { font-size: 0.75rem; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
-        .history-item { font-size: 0.85rem; color: #4b5563; padding: 6px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
-        .history-item:hover { background: #e5e7eb; color: #111; }
-
-        /* Main Workspace Panel */
-        .main { flex: 1; display: flex; flex-direction: column; height: 100vh; background: #ffffff; }
-        header { background: #ffffff; border-bottom: 1px solid #e9ecef; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
-        .page-title { font-size: 1rem; font-weight: 600; color: #111; }
-        .badge { font-size: 0.75rem; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
-
-        .panel { display: none; flex: 1; height: calc(100vh - 57px); flex-direction: column; overflow-y: auto; }
-        .panel.active { display: flex; }
-
-        /* Chat Layout */
-        #chat-stream { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
-        .msg-row { display: flex; width: 100%; }
-        .msg-row.user { justify-content: flex-end; }
-        .msg-row.ai { justify-content: flex-start; }
-
-        .msg-wrap { max-width: 75%; }
-        .msg-body { padding: 12px 16px; border-radius: 8px; font-size: 0.9375rem; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
-        .msg-row.user .msg-body { background: #2563eb; color: #ffffff; }
-        .msg-row.ai .msg-body { background: #f3f4f6; color: #111827; border: 1px solid #e5e7eb; }
-
-        .msg-actions { display: none; gap: 10px; margin-top: 4px; font-size: 0.75rem; color: #6b7280; }
-        .msg-row:hover .msg-actions { display: flex; }
-        .action-btn { background: none; border: none; color: #2563eb; cursor: pointer; font-weight: 600; padding: 0; }
-
-        /* Input Control Bar */
-        .input-bar-container { border-top: 1px solid #e9ecef; padding: 12px 24px; background: #ffffff; display: flex; flex-direction: column; gap: 8px; }
-        .attachment-preview-bar { display: none; align-items: center; gap: 8px; font-size: 0.85rem; color: #2563eb; background: #eff6ff; padding: 6px 12px; border-radius: 6px; width: fit-content; border: 1px solid #dbeafe; }
-        .remove-attach-btn { background: none; border: none; color: #ef4444; cursor: pointer; font-weight: bold; margin-left: 6px; }
-
-        .input-bar { display: flex; gap: 8px; align-items: center; }
-        .ctrl-btn { background: #f8f9fa; border: 1px solid #d1d5db; color: #374151; width: 38px; height: 38px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; }
-        .ctrl-btn:hover { background: #e5e7eb; }
-        
-        .input-bar input[type="text"] { flex: 1; background: #ffffff; border: 1px solid #d1d5db; padding: 10px 14px; color: #111; border-radius: 6px; outline: none; font-size: 0.9375rem; }
-        .input-bar input[type="text"]:focus { border-color: #2563eb; }
-        
-        .send-btn { background: #2563eb; color: #ffffff; border: none; padding: 0 20px; height: 38px; font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
-        .send-btn:hover { background: #1d4ed8; }
-
-        /* Auxiliary Tab Content */
-        .container { padding: 32px; max-width: 900px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 16px; }
-        .card { background: #ffffff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; }
-        .card h3 { font-size: 1rem; color: #111; margin-bottom: 8px; }
-        .card p { font-size: 0.875rem; color: #6b7280; margin-bottom: 12px; }
-        .btn-action { background: #2563eb; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .card { background: #1e293b; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 600px; padding: 25px; border: 1px solid #334155; }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
+        .hidden { display: none !important; }
+        input[type="password"], textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 16px; margin-bottom: 15px; }
+        button { width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0369a1; }
+        #chat-box { height: 300px; overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
+        .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; line-height: 1.4; }
+        .user-msg { background: #0369a1; text-align: right; }
+        .ai-msg { background: #334155; text-align: left; color: #38bdf8; }
+        .error { color: #f87171; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- Security Gateway Password Overlay -->
-    <div id="authOverlay">
-        <div class="auth-box">
-            <h2>Abubakar Ai // Private Gateway</h2>
-            <input type="password" id="accessPass" placeholder="Enter security password..." autocomplete="current-password">
-            <div id="errorMsg" class="error-msg">Incorrect password. Access denied.</div>
-            <button onclick="verifyPassword()">Access Workspace</button>
-        </div>
+    <!-- Lock Screen -->
+    <div id="auth-screen" class="card">
+        <h2>🔒 Abubakar Ai Access</h2>
+        <input type="password" id="pass-input" placeholder="Enter Access Password...">
+        <button onclick="checkPassword()">Unlock Workspace</button>
+        <p id="auth-error" class="error hidden">Incorrect Password! Access Denied.</p>
     </div>
 
-    <!-- Sidebar Navigation -->
-    <aside>
-        <div class="brand"><span>Abubakar</span> Ai</div>
-
-        <div class="user-card">
-            <div class="user-name">Abubakar Sayyed</div>
-            <div class="user-status">● Secure Mode</div>
-        </div>
-
-        <button class="btn-new-chat" onclick="newChat()">+ New Chat</button>
-        
-        <div class="menu-list">
-            <div class="menu-item active" onclick="showPanel('chatTab', this)">Chat</div>
-            <div class="menu-item" onclick="showPanel('notebookTab', this)">Notebook</div>
-            <div class="menu-item" onclick="showPanel('libraryTab', this)">Library</div>
-            <div class="menu-item" onclick="showPanel('imagesTab', this)">Images</div>
-            <div class="menu-item" onclick="showPanel('studentsTab', this)">Students</div>
-            <div class="menu-item" onclick="showPanel('canvaMusicTab', this)">Canva & Music</div>
-            <div class="menu-item" onclick="showPanel('driveTab', this)">Google Drive</div>
-            <div class="menu-item" onclick="showPanel('settingsTab', this)">Settings</div>
-            <div class="menu-item" onclick="showPanel('downloadTab', this)">Downloads</div>
-        </div>
-
-        <div class="history-section">
-            <div class="history-title">Chat History</div>
-            <div id="historyList"></div>
-        </div>
-    </aside>
-
-    <div class="main">
-        <header>
-            <div class="page-title" id="pageTitle">Chat Interface</div>
-            <div class="badge">Encrypted & Password Protected</div>
-        </header>
-
-        <!-- Chat Panel -->
-        <div id="chatTab" class="panel active">
-            <div id="chat-stream">
-                <div class="msg-row ai">
-                    <div class="msg-wrap">
-                        <div class="msg-body">Abubakar Ai secure workspace operational. How can I assist you today?</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-bar-container">
-                <div id="attachPreviewBar" class="attachment-preview-bar">
-                    <span id="attachFileName">File.jpg</span>
-                    <button class="remove-attach-btn" onclick="clearAttachment()">✕</button>
-                </div>
-
-                <div class="input-bar">
-                    <input type="file" id="docAttach" style="display:none;" onchange="stageFile(this, 'Document')">
-                    <input type="file" id="photoAttach" accept="image/*" style="display:none;" onchange="stageFile(this, 'Image')">
-
-                    <button class="ctrl-btn" title="Attach Document" onclick="document.getElementById('docAttach').click()">📎</button>
-                    <button class="ctrl-btn" title="Attach Image" onclick="document.getElementById('photoAttach').click()">📷</button>
-                    <button class="ctrl-btn" id="micBtn" title="Speech Input" onclick="toggleMic()">🎙️</button>
-
-                    <input type="text" id="userInput" placeholder="Send a message..." autocomplete="off">
-                    <button class="send-btn" onclick="sendMsg()">Send</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notebook Panel -->
-        <div id="notebookTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Notebook</h3>
-                    <p>Personal notes and persistent workspace logs.</p>
-                    <textarea id="noteArea" style="width:100%; height:200px; padding:10px; border:1px solid #d1d5db; border-radius:6px; outline:none; font-size:0.9rem;" placeholder="Type workspace notes..."></textarea>
-                    <br><br>
-                    <button class="btn-action" onclick="saveNotes()">Save Notes</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Library Panel -->
-        <div id="libraryTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Library</h3>
-                    <p>Repository for stored scripts and documentation.</p>
-                    <div style="font-size:0.875rem; color:#374151;">
-                        <p style="margin-bottom:6px;">• C++ Engine Core.cpp</p>
-                        <p style="margin-bottom:6px;">• Automation Script.py</p>
-                        <p>• System Audit Log.txt</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Images Panel -->
-        <div id="imagesTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Images</h3>
-                    <p>Media asset upload and management.</p>
-                    <input type="file" accept="image/*" style="margin-bottom:12px;">
-                    <div style="background:#f8f9fa; border:1px dashed #d1d5db; height:100px; border-radius:6px; display:flex; align-items:center; justify-content:center; color:#9ca3af; font-size:0.85rem;">No media assets loaded</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Students Panel -->
-        <div id="studentsTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Students Hub</h3>
-                    <p>Academic organization and study tools.</p>
-                    <button class="btn-action" onclick="alert('Student Mode Active.')">Enable Academic Mode</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Canva & Music Panel -->
-        <div id="canvaMusicTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Canva & Media Tools</h3>
-                    <p>External web tool shortcuts.</p>
-                    <button class="btn-action" onclick="window.open('https://www.canva.com', '_blank')">Launch Canva</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Google Drive Panel -->
-        <div id="driveTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Google Drive</h3>
-                    <p>Cloud directory synchronization.</p>
-                    <button class="btn-action" onclick="alert('Drive sync initialized.')">Sync Drive</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Settings Panel -->
-        <div id="settingsTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Settings</h3>
-                    <p>System runtime configuration.</p>
-                    <label style="display:block; font-size:0.875rem; margin-bottom:8px;"><input type="checkbox" checked> Fast RAM Optimization</label>
-                    <button class="btn-action" onclick="alert('Settings saved successfully.')">Save</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Downloads Panel -->
-        <div id="downloadTab" class="panel">
-            <div class="container">
-                <div class="card">
-                    <h3>Downloads</h3>
-                    <p>Executable software builds for client machines.</p>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap;">
-                        <a href="/download/exe" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:0.875rem;">Windows (.exe)</a>
-                        <a href="/download/apk" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:0.875rem;">Android (.apk)</a>
-                        <a href="/download/linux" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:0.875rem;">Linux Binary</a>
-                        <a href="/download/mac" style="color:#2563eb; text-decoration:none; font-weight:600; font-size:0.875rem;">macOS Build</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Main Workspace -->
+    <div id="app-screen" class="card hidden">
+        <h2>🚀 Abubakar Ai Workspace</h2>
+        <div id="chat-box"></div>
+        <textarea id="prompt-input" rows="3" placeholder="Ask Abubakar Ai anything..."></textarea>
+        <button onclick="sendPrompt()">Send Prompt</button>
     </div>
 
     <script>
-        // Password Authentication Lock (1234567890)
-        function verifyPassword() {
-            const pass = document.getElementById('accessPass').value;
-            if(pass === "1234567890") {
-                document.getElementById('authOverlay').style.display = 'none';
-                sessionStorage.setItem('authenticated', 'true');
+        const AUTH_KEY = "1234567890";
+
+        function checkPassword() {
+            const input = document.getElementById("pass-input").value;
+            if (input === AUTH_KEY) {
+                document.getElementById("auth-screen").classList.add("hidden");
+                document.getElementById("app-screen").classList.remove("hidden");
             } else {
-                document.getElementById('errorMsg').style.display = 'block';
+                document.getElementById("auth-error").classList.remove("hidden");
             }
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if(sessionStorage.getItem('authenticated') === 'true') {
-                document.getElementById('authOverlay').style.display = 'none';
-            }
-        });
+        async function sendPrompt() {
+            const input = document.getElementById("prompt-input");
+            const box = document.getElementById("chat-box");
+            const text = input.value.trim();
+            if (!text) return;
 
-        document.getElementById('accessPass').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') verifyPassword();
-        });
-
-        let currentStagedFile = null;
-
-        function showPanel(panelId, el) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-            document.getElementById(panelId).classList.add('active');
-            if(el) el.classList.add('active');
-        }
-
-        function newChat() {
-            document.getElementById('chat-stream').innerHTML = `
-                <div class="msg-row ai">
-                    <div class="msg-wrap">
-                        <div class="msg-body">New session initialized. Abubakar Ai secure workspace operational.</div>
-                    </div>
-                </div>`;
-            clearAttachment();
-        }
-
-        function saveNotes() {
-            localStorage.setItem('ai_notes', document.getElementById('noteArea').value);
-            alert('Notes saved successfully.');
-        }
-
-        window.onload = function() {
-            const saved = localStorage.getItem('ai_notes');
-            if(saved) document.getElementById('noteArea').value = saved;
-            loadHistory();
-        };
-
-        function stageFile(input, type) {
-            if(input.files && input.files[0]) {
-                currentStagedFile = { name: input.files[0].name, type: type };
-                document.getElementById('attachFileName').innerText = `[${type}] ${input.files[0].name}`;
-                document.getElementById('attachPreviewBar').style.display = 'flex';
-            }
-        }
-
-        function clearAttachment() {
-            currentStagedFile = null;
-            document.getElementById('docAttach').value = '';
-            document.getElementById('photoAttach').value = '';
-            document.getElementById('attachPreviewBar').style.display = 'none';
-        }
-
-        let rec;
-        function toggleMic() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Speech recognition is not supported in this browser.");
-                return;
-            }
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            rec = new SpeechRecognition();
-            rec.lang = 'en-US';
-            rec.onresult = function(e) {
-                document.getElementById('userInput').value = e.results[0][0].transcript;
-            };
-            rec.start();
-        }
-
-        function addHistoryItem(text) {
-            const list = document.getElementById('historyList');
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerText = text;
-            list.prepend(item);
-
-            let historyArr = JSON.parse(localStorage.getItem('ai_history') || '[]');
-            historyArr.unshift(text);
-            if(historyArr.length > 20) historyArr.pop();
-            localStorage.setItem('ai_history', JSON.stringify(historyArr));
-        }
-
-        function loadHistory() {
-            const list = document.getElementById('historyList');
-            let historyArr = JSON.parse(localStorage.getItem('ai_history') || '[]');
-            list.innerHTML = '';
-            historyArr.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerText = item;
-                list.appendChild(div);
-            });
-        }
-
-        async function executeQuery(text, targetId) {
-            const stream = document.getElementById('chat-stream');
-            const tempId = targetId || ('msg-' + Date.now());
-
-            if(!targetId) {
-                stream.innerHTML += `
-                    <div class="msg-row ai" id="${tempId}">
-                        <div class="msg-wrap">
-                            <div class="msg-body" style="color:#6b7280;">Generating response...</div>
-                            <div class="msg-actions">
-                                <button class="action-btn" onclick="retryQuery(this)">Try Again</button>
-                            </div>
-                        </div>
-                    </div>`;
-            } else {
-                document.getElementById(tempId).querySelector('.msg-body').innerText = "Generating response...";
-            }
-            stream.scrollTop = stream.scrollHeight;
+            box.innerHTML += `<div class="msg user-msg"><b>You:</b> ${text}</div>`;
+            input.value = "";
+            box.scrollTop = box.scrollHeight;
 
             try {
-                const res = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ prompt: text })
                 });
                 const data = await res.json();
-                document.getElementById(tempId).querySelector('.msg-body').innerText = data.response;
+                box.innerHTML += `<div class="msg ai-msg"><b>Abubakar Ai:</b> ${data.response}</div>`;
             } catch (err) {
-                document.getElementById(tempId).querySelector('.msg-body').innerText = "Connection error.";
+                box.innerHTML += `<div class="msg ai-msg" style="color:#f87171;"><b>Error:</b> Could not connect to AI backend.</div>`;
             }
-            stream.scrollTop = stream.scrollHeight;
+            box.scrollTop = box.scrollHeight;
         }
-
-        async function sendMsg() {
-            const input = document.getElementById('userInput');
-            let text = input.value.trim();
-            
-            if(!text && !currentStagedFile) return;
-
-            let displayText = text;
-            if(currentStagedFile) {
-                displayText = `[${currentStagedFile.type}: ${currentStagedFile.name}] ${text}`.trim();
-            }
-
-            const stream = document.getElementById('chat-stream');
-            stream.innerHTML += `
-                <div class="msg-row user" data-text="${displayText}">
-                    <div class="msg-wrap">
-                        <div class="msg-body">${displayText}</div>
-                        <div class="msg-actions"><button class="action-btn" onclick="editMsg(this)">Edit</button></div>
-                    </div>
-                </div>`;
-            
-            addHistoryItem(displayText);
-            input.value = '';
-            clearAttachment();
-            stream.scrollTop = stream.scrollHeight;
-
-            await executeQuery(displayText);
-        }
-
-        function editMsg(btn) {
-            const row = btn.closest('.msg-row');
-            const body = row.querySelector('.msg-body');
-            const updated = prompt("Edit message:", body.innerText);
-            if(updated && updated.trim()) {
-                body.innerText = updated;
-                row.setAttribute('data-text', updated);
-                executeQuery(updated);
-            }
-        }
-
-        function retryQuery(btn) {
-            const aiRow = btn.closest('.msg-row');
-            let prev = aiRow.previousElementSibling;
-            while(prev && !prev.classList.contains('user')) {
-                prev = prev.previousElementSibling;
-            }
-            if(prev) {
-                const text = prev.getAttribute('data-text') || prev.querySelector('.msg-body').innerText;
-                executeQuery(text, aiRow.id);
-            }
-        }
-
-        document.getElementById('userInput').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') sendMsg();
-        });
     </script>
 </body>
 </html>
